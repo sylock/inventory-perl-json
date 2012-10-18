@@ -50,7 +50,7 @@ sub defineModules
         ["Inventory::Linuxlib::Bonding",                 "nonPrivileged" ],
         ["Inventory::Linuxlib::CPU",                     "nonPrivileged" ],
         ["Inventory::Linuxlib::Storage",                 "nonPrivileged" ],
-        #["Inventory::Linuxlib::Powerpath",               "Privileged"    ],
+        ["Inventory::Linuxlib::Powerpath",               "Privileged"    ],
         ["Inventory::Linuxlib::HBA",                     "nonPrivileged" ],        
     ];
 

@@ -15,28 +15,28 @@ use File::Spec::Functions qw(rel2abs catfile);
 
 sub run
 {
-    my $class   = shift;
-    my $INVOBJ  = shift;
+  my $class   = shift;
+  my $INVOBJ  = shift;
 
-    my $self    = {};
+  my $self    = {};
 
-    $self->{INVOBJ} = $INVOBJ;
+  $self->{INVOBJ} = $INVOBJ;
 
-    bless($self, $class);
-    $self->{devtypes} = $self->setDevTypes();
+  bless($self, $class);
+  $self->{devtypes} = $self->setDevTypes();
 
-    # We start populating and grabbing the information
-    $self->getBlockDevices();
-    foreach (keys %{ $self->{INVOBJ}->GetTarget("C_STOR_DEV") })
-    {
-      $self->getModel($_);
-      $self->getVendor($_);
-      $self->getDevNumbers($_);
-      $self->getModel($_);
-      $self->findType($_);
-      $self->getSize($_);
-      $self->getPartitions($_);
-    }
+  # We start populating and grabbing the information
+  $self->getBlockDevices();
+  foreach (keys %{ $self->{INVOBJ}->GetTarget("C_STOR_DEV") })
+  {
+    $self->getModel($_);
+    $self->getVendor($_);
+    $self->getDevNumbers($_);
+    $self->getModel($_);
+    $self->findType($_);
+    $self->getSize($_);
+    $self->getPartitions($_);
+  }
 }
 
 sub getBlockDevices
@@ -183,6 +183,13 @@ sub getPartitions
 {
   my ($self, $device) = @_;
   my $from = (caller(0))[3];
+
+  my @partitions = grep(-d $_, </sys/class/block/$device/$device*>);
+
+  foreach (@partitions)
+  {
+    #print $_, "\n";
+  }
 
   
 }

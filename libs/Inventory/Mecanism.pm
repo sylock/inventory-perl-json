@@ -87,9 +87,9 @@ sub StoreValue
               });
     return;
   }
-  my $leaf = $path->[-1];
-  
+   
   my @updated_path = $self->CompletePath($path, $optionnal_path_items_list);
+  my $leaf = $updated_path[-1];
 
   # Now we create the tree is not already defined and store the value
   # but only if the value is not already set
@@ -111,6 +111,42 @@ sub StoreValue
                 msg=>"Refuse to store the value: it is already set.",
               });  
   }
+}
+
+sub PushValue
+{
+  # The value to store must be pushed into an array
+
+  my $self = shift;
+  my ($tag, $value, $from, $optionnal_path_items_list) = @_;
+
+  my $path = $self->{targetsMap}->{$tag};
+
+  if (! defined($path))
+  {
+    $self->log({from=>$from,
+                msg=>"$tag is unknown in our map.",
+              });
+    return;
+  }
+  my $leaf = $path->[-1];
+  
+  my @updated_path = $self->CompletePath($path, $optionnal_path_items_list);
+
+  # Now we create the tree is not already defined and store the value
+  # but only if the value is not already set
+  my $storeLocation = $self->GetOrCreateTree(\@updated_path);
+  if (! defined($storeLocation->{$leaf}))
+  {
+    $storeLocation->{$leaf} = [];    
+  }
+  push(@{ $storeLocation->{$leaf} }, $value);
+  $self->log({target=>join("->", @updated_path),
+                status=>1,
+                from=>$from,
+                msg=>"Stored the value.",
+              });
+  
 }
 
 sub GetTarget

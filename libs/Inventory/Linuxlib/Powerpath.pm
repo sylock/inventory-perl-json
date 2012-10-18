@@ -32,6 +32,9 @@ sub parser
   my $self = shift;
   my $from = (caller(0))[3];
 
+  my $multipath_vendor = "EMC";
+  my $multipath_product = "PowerPath";
+
   # If we don't find the powermt executable then we don't have powermt installed
   if (! $self->Which("powermt"))
   {
@@ -83,47 +86,39 @@ sub parser
         #Symmetrix ID=000292600896
         elsif ($blockLine =~ m/^Symmetrix ID=(\w+)/)
         {
-          $self->{INVOBJ}->StoreValue("C_STOR_DEV_SYMMETRIXID", $1, $from, [$dev]);
+          $self->{INVOBJ}->StoreValue("C_STOR_MULTIPATH_ID", $1, $from, [$dev, "Symmetrix ID"]);
         }
         # Line looks like this:
         #Logical device ID=153E
         elsif ($blockLine =~ m/^Logical device ID=(\w+)/)
         {
-          $self->{INVOBJ}->StoreValue("C_STOR_DEV_SYMMETRIXLOGID", $1, $from, [$dev]);
+          $self->{INVOBJ}->StoreValue("C_STOR_MULTIPATH_ID", $1, $from, [$dev, "Logical device ID"]);
         }
         # Line looks like this:
         #state=alive; policy=SymmOpt; priority=0; queued-IOs=0
         elsif ($blockLine =~ m/^state=(\w+)/)
         {
-          $self->{INVOBJ}->StoreValue("C_STOR_DEV_SYMMSTATE", $1, $from, [$dev]); 
+          $self->{INVOBJ}->StoreValue("C_STOR_MULTIPATH_STATE", $1, $from, [$dev]); 
         }
         # Line looks like this:
         #  1 lpfc                      sdj       FA 10fB   active  alive      0      0
         elsif ($blockLine =~ m/\s+\d+\s+lpfc\s+(\w+)\s+/)
         {
-          my $rhash = $self->{INVOBJ}->GetTarget("C_STOR_DEV");
-          $multipath_devs->{$1} = $rhash->{$1};
-          delete $rhash->{$1};
+          $self->{INVOBJ}->PushValue("C_STOR_MULTIPATH_PATHS", $1, $from, [$dev]); 
         }
-      }
-      # Now we store the multipath devs
-      if ($dev)
-      {
-        if(%$multipath_devs) { $self->{INVOBJ}->StoreValue( "C_STOR_DEV_MULTIPATH"
-                                                            , $multipath_devs
-                                                            , $from
-                                                            , [$dev]); }
-        $self->setPaths($dev);
-        Inventory::Linuxlib::Storage::getDevNumbers($self, $dev);
-        Inventory::Linuxlib::Storage::getSize($self, $dev);
-      }
-    
+      }    
       # If we are not at the last line of the output : we just parsed the @oneBlock.
       # So we make it empty to start populating the next device. We already start by storing
       # the current line already stored in the foreach loop ($_) since it is the first line
       # of the next device.
       if (! $end)
       {
+        if ($dev)
+        {
+          $self->{INVOBJ}->StoreValue("C_STOR_MULTIPATH_VENDOR", $multipath_vendor, $from, [$dev]);
+          $self->{INVOBJ}->StoreValue("C_STOR_MULTIPATH_PRODUCT", $multipath_product, $from, [$dev]);
+        }
+        
         @oneBlock = ();
         push(@oneBlock, $_);
       }
