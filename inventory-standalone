@@ -1,0 +1,90 @@
+#! /usr/bin/env perl
+
+# INVENTORY library is written by Nicolas Michel
+# sep 2012
+
+# use for standalone execution (adding the libs folder to the module search paths)
+BEGIN
+{
+    use File::Spec::Functions qw(rel2abs catfile);
+    use File::Basename qw(dirname);
+    my  $path = rel2abs(__FILE__);
+    our $directory = dirname($path);
+    our $directory = catfile($directory, "libs");
+}
+use lib $directory;
+
+use strict;
+use warnings;
+
+use Inventory;
+use File::Basename qw(basename);
+
+sub printUsage
+{
+    my $prog_name = basename($0);
+    print "\"$prog_name\" has for purpose to inventory your server/computer. Without any arguments it will\n";
+    print "print on standard output the inventory information (formatted in indented JSON).\n";
+    print "If you want to pipe the inventory data into another program it is really safer to create a named pipe\n";
+    print "and push the data there with the -f flag since some system commands used to grab information may have\n";
+    print "an unexpected behavior and print on STDERR or STDOUT somme messages that may break the JSON format.\n";
+    print "\n";
+    print "USAGE: $prog_name [OPTIONS]\n";
+    print "\n";
+    print "OPTIONS:\n";
+    print "\t--file or -f {filename}\tWrite the inventory into a file (JSON encoded).\n";
+    print "\t--disable-sudo or -S\tDisable all of the methods that require privilege elevation.\n";
+    print "\t--debug or -d\t\tEnable debug mode and so print the long logs.\n";
+    print "\t--help or -h\t\tShow this help message.\n";
+    print"\n\n";
+    print "For debugging purpose you can also set the \"MAKEITCRASH\" environment variable to whatever value you want.\n";
+    print "It will prevent from catching the die statements and so will highlight syntax errors and other bugs. It is \n";
+    print "desiderable when developping not to scroll to find the error in the JSON data structure.\n";
+    print "Exemple : export MAKEITCRASH=ok ; $0\n";
+    exit 1;
+}
+
+my %params = ();
+$params{disablePrivilegedMethods} = 0;
+$params{enableDebug} = 0;
+foreach (@ARGV)
+{
+    my $arg = shift;
+
+    # If switch -S or --disable-sudo is set, skip any privileged method    
+    if ( ($arg eq "--disable-sudo") or ($arg eq "-S") ) 
+    {
+        $params{disablePrivilegedMethods} = 1;
+    }
+    elsif ( ($arg eq "--debug") or ($arg eq "-d"))
+    {
+        $params{enableDebug} = 1;
+    }
+    elsif ( ($arg eq "-f") or ($arg eq "--file") )
+    {
+        $params{outputFile} = shift;
+    }
+    elsif ( ($arg eq "-h") or ($arg eq "--help") )
+    {
+        printUsage();
+    }
+    else
+    {
+        printUsage();
+    }
+    
+}
+# Start the inventory with or without sudo methods (default: yes)
+my $inventory = Inventory->new(%params);
+
+if ( defined($params{outputFile}) )
+{
+    open(my $fd, ">", $params{outputFile}) or die "Can't open ". $params{outputFile} . ": $@";
+    print $fd $inventory->get_json;
+    close($fd);
+}
+else
+{
+    # Print it to terminal
+    $inventory->print_json();
+}
